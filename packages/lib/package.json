@@ -26,7 +26,16 @@
     "test:types": "tsc",
     "publish:prepare": "cp ../../README.md . && yarn build",
     "publish:package": "yarn publish:prepare && npm publish --access public && rm README.md",
-    "build": "webpack --config webpack.config.js"
+    "build": "webpack --config webpack.config.js",
+    "v2:apply": "node scripts/apply-v2.js",
+    "v2:revert": "node scripts/revert-v1.js",
+    "v2:backup": "node scripts/backup-v1.js",
+    "v2:status": "node scripts/check-version.js",
+    "benchmark": "node --expose-gc src/spatial-navigation/__benchmarks__/performance.benchmark.ts",
+    "benchmark:navigation": "node --expose-gc src/spatial-navigation/__benchmarks__/performance.benchmark.ts",
+    "benchmark:components": "jest --testMatch='**/__benchmarks__/component.benchmark.tsx'",
+    "benchmark:all": "yarn benchmark && yarn benchmark:components",
+    "perf:compare": "node scripts/compare-versions.js"
   },
   "dependencies": {
     "@bam.tech/lrud": "^8.0.2",
