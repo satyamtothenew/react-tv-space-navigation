@@ -9,7 +9,7 @@
 - [API documentation](#api-documentation)
 - [Pitfalls](#pitfalls--troubleshooting)
 - [Accessibility support](#accessibility-support)
-- [Contributing](#contributing)
+- [Contributing](#contributing) 
 
 # Why?
 
