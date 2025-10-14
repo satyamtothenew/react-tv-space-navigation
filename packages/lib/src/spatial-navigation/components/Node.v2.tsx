@@ -279,26 +279,11 @@ export const SpatialNavigationNodeV2 = forwardRef<SpatialNavigationNodeRef, Prop
      */
     const proxyObject = useProxyState(isFocused, isActive, isRootActive, accessedPropertiesRef);
 
-    /**
-     * V2 Optimization: Memoize the rendered child to prevent unnecessary re-renders
-     * Only re-render when accessed properties actually change
-     */
-    const renderedChild = useMemo(() => {
-      if (typeof children === 'function') {
-        return bindRefToChild(children(proxyObject));
-      }
-      return children;
-    }, [
-      children,
-      bindRefToChild,
-      proxyObject,
-      // Only re-render if accessed properties change
-      ...(accessedPropertiesRef.current.has('isFocused') ? [isFocused] : []),
-      ...(accessedPropertiesRef.current.has('isActive') ? [isActive] : []),
-      ...(accessedPropertiesRef.current.has('isRootActive') ? [isRootActive] : []),
-    ]);
-
-    return <ParentIdContext.Provider value={id}>{renderedChild}</ParentIdContext.Provider>;
+    return (
+      <ParentIdContext.Provider value={id}>
+        {typeof children === 'function' ? bindRefToChild(children(proxyObject)) : children}
+      </ParentIdContext.Provider>
+    );
   },
 );
 
