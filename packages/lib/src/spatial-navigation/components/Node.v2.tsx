@@ -83,13 +83,12 @@ const useScrollToNodeIfNeeded = ({
 };
 
 /**
- * Optimized ref binding with memoization
+ * V2 Optimization: Simplified ref binding like v1
  */
 const useBindRefToChild = () => {
   const childRef = useRef<View | null>(null);
 
-  // Memoize the binding function
-  const bindRefToChild = useCallback((child: React.ReactElement) => {
+  const bindRefToChild = (child: React.ReactElement) => {
     return React.cloneElement(child, {
       // @ts-expect-error @fixme can't find how to type this properly
       ...child.props,
@@ -107,13 +106,13 @@ const useBindRefToChild = () => {
         }
       },
     });
-  }, []);
+  };
 
   return { bindRefToChild, childRef };
 };
 
 /**
- * Optimized Proxy that's created once and reused
+ * V2 Optimization: Create proxy on each render like v1, but with better performance tracking
  */
 const useProxyState = (
   isFocused: boolean,
@@ -121,26 +120,16 @@ const useProxyState = (
   isRootActive: boolean,
   accessedPropertiesRef: React.MutableRefObject<Set<keyof FocusableNodeState>>,
 ) => {
-  // Store state in a ref that can be updated without recreating the proxy
-  const stateRef = useRef({ isFocused, isActive, isRootActive });
-  const proxyRef = useRef<FocusableNodeState | null>(null);
-
-  // Create proxy only once
-  if (!proxyRef.current) {
-    proxyRef.current = new Proxy(stateRef.current, {
+  // Create proxy on each render like v1 to ensure it always has current values
+  return new Proxy(
+    { isFocused, isActive, isRootActive },
+    {
       get(target, prop: keyof FocusableNodeState) {
         accessedPropertiesRef.current.add(prop);
         return target[prop];
       },
-    });
-  }
-
-  // Update the target values (proxy remains the same reference)
-  stateRef.current.isFocused = isFocused;
-  stateRef.current.isActive = isActive;
-  stateRef.current.isRootActive = isRootActive;
-
-  return proxyRef.current;
+    },
+  );
 };
 
 export const SpatialNavigationNodeV2 = forwardRef<SpatialNavigationNodeRef, Props>(
@@ -187,18 +176,15 @@ export const SpatialNavigationNodeV2 = forwardRef<SpatialNavigationNodeRef, Prop
       additionalOffset,
     });
 
-    /**
-     * V2 Optimization: Use stable callback refs instead of inline functions
-     * These refs are updated on every render but don't trigger re-registration
-     */
+    // V2 Optimization: Use refs for callbacks to avoid recreating registration config
     const callbacksRef = useRef({
-      onSelect: onSelect,
-      onLongSelect: onLongSelect,
-      onFocus: onFocus,
-      onBlur: onBlur,
-      onActive: onActive,
-      onInactive: onInactive,
-      scrollToNodeIfNeeded: scrollToNodeIfNeeded,
+      onSelect,
+      onLongSelect,
+      onFocus,
+      onBlur,
+      onActive,
+      onInactive,
+      scrollToNodeIfNeeded,
     });
 
     // Update callbacks in ref without triggering effects
