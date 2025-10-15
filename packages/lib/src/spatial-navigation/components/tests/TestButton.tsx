@@ -1,6 +1,6 @@
 import styled from '@emotion/native';
 import { Text } from 'react-native';
-import { SpatialNavigationNode } from '../Node';
+import { SpatialNavigationNode, FocusableNodeState } from '../Node';
 
 export type PropsTestButton = {
   onSelect?: () => void;
@@ -10,7 +10,7 @@ export type PropsTestButton = {
 export const TestButton = ({ onSelect, title }: PropsTestButton) => {
   return (
     <SpatialNavigationNode onSelect={onSelect} isFocusable>
-      {({ isFocused }) => (
+      {({ isFocused }: FocusableNodeState) => (
         <TextContainer
           isFocused={isFocused}
           accessible
