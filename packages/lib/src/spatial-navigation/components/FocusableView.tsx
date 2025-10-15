@@ -51,7 +51,7 @@ export const SpatialNavigationFocusableView = forwardRef<SpatialNavigationNodeRe
 
     return (
       <SpatialNavigationNode isFocusable {...props} ref={nodeRef}>
-        {(nodeState) => (
+        {(nodeState: FocusableNodeState) => (
           <InnerFocusableView
             viewProps={viewProps}
             webProps={webProps}

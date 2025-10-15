@@ -1,6 +1,6 @@
 /**
  * Performance Benchmarks for v2 Optimizations
- * 
+ *
  * Compares v1 vs v2 performance across key metrics:
  * 1. Node registration time
  * 2. Focus navigation latency
@@ -38,15 +38,15 @@ type BenchmarkResult = {
  * Simple performance timer
  */
 class PerformanceTimer {
-  private startTime: number = 0;
-  private startMemory: number = 0;
+  private startTime = 0;
+  private startMemory = 0;
 
   start() {
     // Force garbage collection if available (Node.js with --expose-gc flag)
     if (global.gc) {
       global.gc();
     }
-    
+
     this.startMemory = process.memoryUsage().heapUsed / 1024 / 1024;
     this.startTime = performance.now();
   }
@@ -54,7 +54,7 @@ class PerformanceTimer {
   end(): { time: number; memory: number } {
     const endTime = performance.now();
     const endMemory = process.memoryUsage().heapUsed / 1024 / 1024;
-    
+
     return {
       time: endTime - this.startTime,
       memory: endMemory - this.startMemory,
@@ -68,10 +68,10 @@ class PerformanceTimer {
 export const benchmarkNodeRegistration = (
   navigator: SpatialNavigator | SpatialNavigatorV2,
   nodeCount: number,
-  version: 'v1' | 'v2'
+  version: 'v1' | 'v2',
 ): BenchmarkResult => {
   const timer = new PerformanceTimer();
-  
+
   // Register root
   navigator.registerNode('root', { orientation: 'vertical' });
 
@@ -112,7 +112,7 @@ export const benchmarkNodeRegistration = (
 export const benchmarkFocusNavigation = (
   navigator: SpatialNavigator | SpatialNavigatorV2,
   iterations: number,
-  version: 'v1' | 'v2'
+  version: 'v1' | 'v2',
 ): BenchmarkResult => {
   const timer = new PerformanceTimer();
 
@@ -166,7 +166,7 @@ export const benchmarkNestedRegistration = (
   navigator: SpatialNavigator | SpatialNavigatorV2,
   depth: number,
   branchingFactor: number,
-  version: 'v1' | 'v2'
+  version: 'v1' | 'v2',
 ): BenchmarkResult => {
   const timer = new PerformanceTimer();
   let totalNodes = 0;
@@ -228,7 +228,7 @@ export const benchmarkNestedRegistration = (
 export const benchmarkBatchRegistration = (
   navigator: SpatialNavigator | SpatialNavigatorV2,
   nodeCount: number,
-  version: 'v1' | 'v2'
+  version: 'v1' | 'v2',
 ): BenchmarkResult => {
   const timer = new PerformanceTimer();
 
@@ -279,7 +279,7 @@ export const runAllBenchmarks = () => {
   console.log('-'.repeat(80));
   for (const nodeCount of BENCHMARK_CONFIG.NODE_COUNTS) {
     const onDirectionHandledWithoutMovementRef = { current: () => undefined };
-    
+
     const v1Navigator = new SpatialNavigator({ onDirectionHandledWithoutMovementRef });
     const v1Result = benchmarkNodeRegistration(v1Navigator, nodeCount, 'v1');
     results.push(v1Result);
@@ -289,10 +289,14 @@ export const runAllBenchmarks = () => {
     results.push(v2Result);
 
     const improvement = ((v1Result.time - v2Result.time) / v1Result.time) * 100;
-    
+
     console.log(`\nNodes: ${nodeCount}`);
-    console.log(`  v1: ${v1Result.time.toFixed(2)}ms (${v1Result.opsPerSecond.toFixed(0)} ops/sec)`);
-    console.log(`  v2: ${v2Result.time.toFixed(2)}ms (${v2Result.opsPerSecond.toFixed(0)} ops/sec)`);
+    console.log(
+      `  v1: ${v1Result.time.toFixed(2)}ms (${v1Result.opsPerSecond.toFixed(0)} ops/sec)`,
+    );
+    console.log(
+      `  v2: ${v2Result.time.toFixed(2)}ms (${v2Result.opsPerSecond.toFixed(0)} ops/sec)`,
+    );
     console.log(`  Improvement: ${improvement.toFixed(1)}% faster`);
   }
 
@@ -301,21 +305,13 @@ export const runAllBenchmarks = () => {
   console.log('-'.repeat(80));
   {
     const onDirectionHandledWithoutMovementRef = { current: () => undefined };
-    
+
     const v1Navigator = new SpatialNavigator({ onDirectionHandledWithoutMovementRef });
-    const v1Result = benchmarkFocusNavigation(
-      v1Navigator,
-      BENCHMARK_CONFIG.FOCUS_ITERATIONS,
-      'v1'
-    );
+    const v1Result = benchmarkFocusNavigation(v1Navigator, BENCHMARK_CONFIG.FOCUS_ITERATIONS, 'v1');
     results.push(v1Result);
 
     const v2Navigator = new SpatialNavigatorV2({ onDirectionHandledWithoutMovementRef });
-    const v2Result = benchmarkFocusNavigation(
-      v2Navigator,
-      BENCHMARK_CONFIG.FOCUS_ITERATIONS,
-      'v2'
-    );
+    const v2Result = benchmarkFocusNavigation(v2Navigator, BENCHMARK_CONFIG.FOCUS_ITERATIONS, 'v2');
     results.push(v2Result);
 
     const improvement = ((v1Result.time - v2Result.time) / v1Result.time) * 100;
@@ -323,8 +319,12 @@ export const runAllBenchmarks = () => {
     const avgLatencyV2 = v2Result.time / v2Result.operations;
 
     console.log(`\nIterations: ${BENCHMARK_CONFIG.FOCUS_ITERATIONS}`);
-    console.log(`  v1: ${v1Result.time.toFixed(2)}ms total, ${avgLatencyV1.toFixed(3)}ms avg latency`);
-    console.log(`  v2: ${v2Result.time.toFixed(2)}ms total, ${avgLatencyV2.toFixed(3)}ms avg latency`);
+    console.log(
+      `  v1: ${v1Result.time.toFixed(2)}ms total, ${avgLatencyV1.toFixed(3)}ms avg latency`,
+    );
+    console.log(
+      `  v2: ${v2Result.time.toFixed(2)}ms total, ${avgLatencyV2.toFixed(3)}ms avg latency`,
+    );
     console.log(`  Improvement: ${improvement.toFixed(1)}% faster`);
   }
 
@@ -346,7 +346,9 @@ export const runAllBenchmarks = () => {
 
     const improvement = ((v1Result.time - v2Result.time) / v1Result.time) * 100;
 
-    console.log(`\nDepth: ${depth}, Branching: ${branchingFactor}, Total Nodes: ${v1Result.nodeCount}`);
+    console.log(
+      `\nDepth: ${depth}, Branching: ${branchingFactor}, Total Nodes: ${v1Result.nodeCount}`,
+    );
     console.log(`  v1: ${v1Result.time.toFixed(2)}ms`);
     console.log(`  v2: ${v2Result.time.toFixed(2)}ms`);
     console.log(`  Improvement: ${improvement.toFixed(1)}% faster`);
@@ -356,9 +358,9 @@ export const runAllBenchmarks = () => {
   console.log('\n\n' + '='.repeat(80));
   console.log('📈 Performance Summary');
   console.log('='.repeat(80));
-  
-  const v1Times = results.filter(r => r.version === 'v1').reduce((sum, r) => sum + r.time, 0);
-  const v2Times = results.filter(r => r.version === 'v2').reduce((sum, r) => sum + r.time, 0);
+
+  const v1Times = results.filter((r) => r.version === 'v1').reduce((sum, r) => sum + r.time, 0);
+  const v2Times = results.filter((r) => r.version === 'v2').reduce((sum, r) => sum + r.time, 0);
   const overallImprovement = ((v1Times - v2Times) / v1Times) * 100;
 
   console.log(`\nOverall Improvement: ${overallImprovement.toFixed(1)}% faster`);
@@ -377,8 +379,8 @@ export const exportBenchmarkResults = (results: BenchmarkResult[]) => {
     timestamp: new Date().toISOString(),
     results,
     summary: {
-      v1TotalTime: results.filter(r => r.version === 'v1').reduce((sum, r) => sum + r.time, 0),
-      v2TotalTime: results.filter(r => r.version === 'v2').reduce((sum, r) => sum + r.time, 0),
+      v1TotalTime: results.filter((r) => r.version === 'v1').reduce((sum, r) => sum + r.time, 0),
+      v2TotalTime: results.filter((r) => r.version === 'v2').reduce((sum, r) => sum + r.time, 0),
     },
   };
 };
@@ -389,4 +391,3 @@ export const exportBenchmarkResults = (results: BenchmarkResult[]) => {
 if (require.main === module) {
   runAllBenchmarks();
 }
-
