@@ -257,8 +257,18 @@ export const useDefaultFocusV2 = () => {
  * Performance comparison
  */
 if (__DEV__) {
-  (UnifiedNavigationProvider as unknown as { __PERF_OPTIMIZED__: boolean; __OPTIMIZATIONS__: string[] }).__PERF_OPTIMIZED__ = true;
-  (UnifiedNavigationProvider as unknown as { __PERF_OPTIMIZED__: boolean; __OPTIMIZATIONS__: string[] }).__OPTIMIZATIONS__ = [
+  (
+    UnifiedNavigationProvider as unknown as {
+      __PERF_OPTIMIZED__: boolean;
+      __OPTIMIZATIONS__: string[];
+    }
+  ).__PERF_OPTIMIZED__ = true;
+  (
+    UnifiedNavigationProvider as unknown as {
+      __PERF_OPTIMIZED__: boolean;
+      __OPTIMIZATIONS__: string[];
+    }
+  ).__OPTIMIZATIONS__ = [
     'Unified context (6 → 1)',
     'Selector pattern for selective subscriptions',
     'Batched updates via microtask',

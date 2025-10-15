@@ -405,8 +405,12 @@ const styles = StyleSheet.create({
  * Performance Metrics (dev only)
  */
 if (__DEV__) {
-  (VirtualizedListV2 as unknown as { __PERF_OPTIMIZED__: boolean; __OPTIMIZATIONS__: string[] }).__PERF_OPTIMIZED__ = true;
-  (VirtualizedListV2 as unknown as { __PERF_OPTIMIZED__: boolean; __OPTIMIZATIONS__: string[] }).__OPTIMIZATIONS__ = [
+  (
+    VirtualizedListV2 as unknown as { __PERF_OPTIMIZED__: boolean; __OPTIMIZATIONS__: string[] }
+  ).__PERF_OPTIMIZED__ = true;
+  (
+    VirtualizedListV2 as unknown as { __PERF_OPTIMIZED__: boolean; __OPTIMIZATIONS__: string[] }
+  ).__OPTIMIZATIONS__ = [
     'Float32Array offsets',
     'Aggressive memoization',
     'Custom React.memo comparison',

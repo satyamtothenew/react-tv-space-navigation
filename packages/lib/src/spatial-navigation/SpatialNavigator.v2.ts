@@ -333,10 +333,20 @@ export default class SpatialNavigatorV2 {
       // Recursively collect all node IDs
       const collectNodeIds = (nodes: unknown[]) => {
         nodes.forEach((node) => {
-          if (node && typeof node === 'object' && 'id' in node && typeof (node as any).id === 'string') {
+          if (
+            node &&
+            typeof node === 'object' &&
+            'id' in node &&
+            typeof (node as any).id === 'string'
+          ) {
             allNodeIds.add((node as any).id);
           }
-          if (node && typeof node === 'object' && 'children' in node && Array.isArray((node as any).children)) {
+          if (
+            node &&
+            typeof node === 'object' &&
+            'children' in node &&
+            Array.isArray((node as any).children)
+          ) {
             collectNodeIds((node as any).children);
           }
         });
