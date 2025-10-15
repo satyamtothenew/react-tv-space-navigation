@@ -322,7 +322,7 @@ export default class SpatialNavigatorV2 {
     if (typeof jest !== 'undefined' || process.env.NODE_ENV === 'test') {
       return;
     }
-    
+
     this.cleanupIntervalId = setInterval(() => {
       this.cleanupStaleReferences();
     }, this.CLEANUP_INTERVAL_MS);
@@ -342,17 +342,17 @@ export default class SpatialNavigatorV2 {
             node &&
             typeof node === 'object' &&
             'id' in node &&
-            typeof (node as any).id === 'string'
+            typeof (node as { id?: string }).id === 'string'
           ) {
-            allNodeIds.add((node as any).id);
+            allNodeIds.add((node as { id: string }).id);
           }
           if (
             node &&
             typeof node === 'object' &&
             'children' in node &&
-            Array.isArray((node as any).children)
+            Array.isArray((node as { children?: unknown[] }).children)
           ) {
-            collectNodeIds((node as any).children);
+            collectNodeIds((node as { children: unknown[] }).children);
           }
         });
       };
