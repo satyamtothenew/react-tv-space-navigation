@@ -1,6 +1,6 @@
 /**
  * SpatialNavigator v2 - Optimized Version
- * 
+ *
  * Key improvements:
  * 1. Batched registration system (O(n) instead of O(n²))
  * 2. WeakMap for automatic memory cleanup
@@ -64,7 +64,7 @@ export default class SpatialNavigatorV2 {
   }: SpatialNavigatorParams) {
     this.lrud = new Lrud();
     this.onDirectionHandledWithoutMovementRef = onDirectionHandledWithoutMovementRef;
-    
+
     // Start periodic cleanup
     this.startPeriodicCleanup();
   }
@@ -96,10 +96,9 @@ export default class SpatialNavigatorV2 {
   private scheduleBatchProcessing() {
     // Use requestIdleCallback if available (browser), otherwise setTimeout
     if (typeof requestIdleCallback !== 'undefined') {
-      this.batchTimeoutId = requestIdleCallback(
-        () => this.processBatchRegistration(),
-        { timeout: this.BATCH_DELAY_MS }
-      ) as any;
+      this.batchTimeoutId = requestIdleCallback(() => this.processBatchRegistration(), {
+        timeout: this.BATCH_DELAY_MS,
+      }) as unknown as ReturnType<typeof setTimeout>;
     } else {
       this.batchTimeoutId = setTimeout(() => this.processBatchRegistration(), this.BATCH_DELAY_MS);
     }
@@ -133,14 +132,14 @@ export default class SpatialNavigatorV2 {
         stillPending.push(task);
       } else {
         console.warn(
-          `[SpatialNavigator v2] Max registration attempts reached for node: ${id}, parent: ${parent}`
+          `[SpatialNavigator v2] Max registration attempts reached for node: ${id}, parent: ${parent}`,
         );
       }
     }
 
     // Register all ready nodes in batch
     this.metrics.batchedRegistrations += readyToRegister.length;
-    
+
     readyToRegister.forEach((task) => {
       try {
         const id = task.params[0];
@@ -153,7 +152,7 @@ export default class SpatialNavigatorV2 {
           if (!this.parentChildMap.has(parent)) {
             this.parentChildMap.set(parent, new Set());
           }
-          this.parentChildMap.get(parent)!.add(id);
+          this.parentChildMap.get(parent)?.add(id);
         }
 
         // Handle any queued focus after registration
@@ -178,18 +177,18 @@ export default class SpatialNavigatorV2 {
    */
   public unregisterNode(...params: Parameters<Lrud['unregisterNode']>) {
     const id = params[0];
-    
+
     // Ensure id is a string
     if (typeof id !== 'string') {
       console.warn('[SpatialNavigator v2] Cannot unregister non-string node ID');
       return;
     }
-    
+
     // Clean up parent-child mapping
     const children = this.parentChildMap.get(id);
     if (children) {
       // Unregister all children first
-      children.forEach(childId => {
+      children.forEach((childId) => {
         try {
           this.lrud.unregisterNode(childId);
         } catch (e) {
@@ -200,7 +199,7 @@ export default class SpatialNavigatorV2 {
     }
 
     // Remove from parent's children set
-    for (const [parentId, childSet] of this.parentChildMap.entries()) {
+    for (const [, childSet] of this.parentChildMap.entries()) {
       if (childSet.has(id)) {
         childSet.delete(id);
         break;
@@ -330,15 +329,15 @@ export default class SpatialNavigatorV2 {
       const rootNode = this.lrud.getRootNode();
       const allNodes = rootNode?.children || [];
       const allNodeIds = new Set<string>();
-      
+
       // Recursively collect all node IDs
-      const collectNodeIds = (nodes: any[]) => {
-        nodes.forEach(node => {
-          if (typeof node.id === 'string') {
-            allNodeIds.add(node.id);
+      const collectNodeIds = (nodes: unknown[]) => {
+        nodes.forEach((node) => {
+          if (node && typeof node === 'object' && 'id' in node && typeof (node as any).id === 'string') {
+            allNodeIds.add((node as any).id);
           }
-          if (node.children) {
-            collectNodeIds(node.children);
+          if (node && typeof node === 'object' && 'children' in node && Array.isArray((node as any).children)) {
+            collectNodeIds((node as any).children);
           }
         });
       };
@@ -409,9 +408,6 @@ export default class SpatialNavigatorV2 {
     this.focusQueue = null;
     this.virtualNodeFocusQueue = null;
 
-    if (__DEV__) {
-      console.log('[SpatialNavigator v2] Destroyed', this.getMetrics());
-    }
+    // Cleanup completed
   }
 }
-

@@ -8,7 +8,7 @@
  * 4. Memory usage during component lifecycle
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { render, act } from '@testing-library/react-native';
 import { SpatialNavigationNode } from '../components/Node';
 import { SpatialNavigationRoot } from '../components/Root';
@@ -57,7 +57,7 @@ const TestNode = ({
   if (isFocusable) {
     return (
       <SpatialNavigationNode isFocusable={true}>
-        {(state: any) => <>{children || `Node ${id}`}</>}
+        {() => <>{children || `Node ${id}`}</>}
       </SpatialNavigationNode>
     );
   }
@@ -106,8 +106,6 @@ export const benchmarkInitialMount = (nodeCount: number) => {
  */
 export const benchmarkFocusChangeRerenders = () => {
   const TestApp = () => {
-    const [focusedIndex, setFocusedIndex] = useState(0);
-
     return (
       <SpatialNavigationRoot>
         {Array.from({ length: 10 }).map((_, i) => (

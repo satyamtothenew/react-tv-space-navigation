@@ -292,10 +292,9 @@ export const SpatialNavigationNodeV2 = forwardRef<SpatialNavigationNodeRef, Prop
       children,
       bindRefToChild,
       proxyObject,
-      // Only re-render if accessed properties change
-      ...(accessedPropertiesRef.current.has('isFocused') ? [isFocused] : []),
-      ...(accessedPropertiesRef.current.has('isActive') ? [isActive] : []),
-      ...(accessedPropertiesRef.current.has('isRootActive') ? [isRootActive] : []),
+      isFocused,
+      isActive,
+      isRootActive,
     ]);
 
     return <ParentIdContext.Provider value={id}>{renderedChild}</ParentIdContext.Provider>;
@@ -309,5 +308,5 @@ SpatialNavigationNodeV2.displayName = 'SpatialNavigationNodeV2';
  */
 if (__DEV__) {
   // Attach performance metrics to the component
-  (SpatialNavigationNodeV2 as any).__PERF_OPTIMIZED__ = true;
+  (SpatialNavigationNodeV2 as unknown as { __PERF_OPTIMIZED__: boolean }).__PERF_OPTIMIZED__ = true;
 }

@@ -19,7 +19,7 @@ import {
 } from './hooks/useVirtualizedListAnimation';
 import { NodeOrientation } from '../../types/orientation';
 import { typedMemo } from '../../helpers/TypedMemo';
-import { getSizeInPxFromOneItemToAnother } from './helpers/getSizeInPxFromOneItemToAnother';
+// import { getSizeInPxFromOneItemToAnother } from './helpers/getSizeInPxFromOneItemToAnother';
 import { computeAllScrollOffsets } from './helpers/createScrollOffsetArray';
 import { getNumberOfItemsVisibleOnScreen } from './helpers/getNumberOfItemsVisibleOnScreen';
 import { getAdditionalNumberOfItemsRendered } from './helpers/getAdditionalNumberOfItemsRendered';
@@ -203,7 +203,7 @@ export const VirtualizedListV2 = typedMemo(
           listSizeInPx,
           itemSize,
         }),
-      [data.length, listSizeInPx, itemSize],
+      [data, listSizeInPx, itemSize],
     );
 
     const numberOfItemsToRender = useMemo(
@@ -229,7 +229,7 @@ export const VirtualizedListV2 = typedMemo(
           scrollBehavior,
         }),
       [
-        data.length, // Use length, not full data array
+        data, // Include full data array for proper memoization
         currentlyFocusedItemIndex,
         numberOfItemsToRender,
         numberOfItemsVisibleOnScreen,
@@ -267,7 +267,7 @@ export const VirtualizedListV2 = typedMemo(
           listSizeInPx: listSizeInPx,
         }),
       [
-        data.length, // Use length instead of full data
+        data, // Include full data array for proper memoization
         itemSize,
         listSizeInPx,
         nbMaxOfItems,
@@ -402,8 +402,8 @@ const styles = StyleSheet.create({
  * Performance Metrics (dev only)
  */
 if (__DEV__) {
-  (VirtualizedListV2 as any).__PERF_OPTIMIZED__ = true;
-  (VirtualizedListV2 as any).__OPTIMIZATIONS__ = [
+  (VirtualizedListV2 as unknown as { __PERF_OPTIMIZED__: boolean; __OPTIMIZATIONS__: string[] }).__PERF_OPTIMIZED__ = true;
+  (VirtualizedListV2 as unknown as { __PERF_OPTIMIZED__: boolean; __OPTIMIZATIONS__: string[] }).__OPTIMIZATIONS__ = [
     'Float32Array offsets',
     'Aggressive memoization',
     'Custom React.memo comparison',
