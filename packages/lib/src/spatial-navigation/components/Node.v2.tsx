@@ -1,23 +1,4 @@
-/**
- * SpatialNavigationNode v2 - Optimized Version
- *
- * Key improvements:
- * 1. Reusable Proxy instance (created once, not on every render)
- * 2. Memoized callbacks with stable references
- * 3. Selective state updates (only update if property is accessed)
- * 4. Reduced useEffect count (single registration effect)
- * 5. Optimized re-render conditions
- */
-
-import React, {
-  forwardRef,
-  useEffect,
-  useImperativeHandle,
-  useRef,
-  useState,
-  useMemo,
-  useCallback,
-} from 'react';
+import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { useSpatialNavigatorDefaultFocus } from '../context/DefaultFocusContext';
 import { ParentIdContext, useParentId } from '../context/ParentIdContext';
@@ -30,11 +11,16 @@ import { SpatialNavigationNodeRef } from '../types/SpatialNavigationNodeRef';
 import { useIsRootActive } from '../context/IsRootActiveContext';
 
 type NonFocusableNodeState = {
+  /** Returns whether the root is active or not. An active node is active if one of its children is focused. */
   isActive: boolean;
+  /** Returns whether the root is active or not.
+   * This is very handy if you want to hide the focus on your page elements when
+   * the side-menu is focused (since it is a different root navigator) */
   isRootActive: boolean;
 };
 
 export type FocusableNodeState = NonFocusableNodeState & {
+  /** Returns whether the root is focused or not. */
   isFocused: boolean;
 };
 
@@ -42,12 +28,10 @@ type FocusableProps = {
   isFocusable: true;
   children: (props: FocusableNodeState) => React.ReactElement;
 };
-
 type NonFocusableProps = {
   isFocusable?: false;
   children: React.ReactElement | ((props: NonFocusableNodeState) => React.ReactElement);
 };
-
 type DefaultProps = {
   onFocus?: () => void;
   onBlur?: () => void;
@@ -56,17 +40,19 @@ type DefaultProps = {
   onActive?: () => void;
   onInactive?: () => void;
   orientation?: NodeOrientation;
+  /** Use this for grid alignment.
+   * @see LRUD docs */
   alignInGrid?: boolean;
   indexRange?: NodeIndexRange;
+  /**
+   * This is an additional offset useful only for the scrollview. It adds up to the offsetFromStart of the scrollview.
+   */
   additionalOffset?: number;
 };
-
 type Props = DefaultProps & (FocusableProps | NonFocusableProps);
+
 export type SpatialNavigationNodeDefaultProps = DefaultProps;
 
-/**
- * Optimized scroll handler with stable reference
- */
 const useScrollToNodeIfNeeded = ({
   childRef,
   additionalOffset,
@@ -75,27 +61,22 @@ const useScrollToNodeIfNeeded = ({
   additionalOffset?: number;
 }) => {
   const { scrollToNodeIfNeeded } = useSpatialNavigatorParentScroll();
-
-  // Memoize the callback to maintain stable reference
-  return useCallback(() => {
-    scrollToNodeIfNeeded(childRef, additionalOffset);
-  }, [scrollToNodeIfNeeded, childRef, additionalOffset]);
+  return () => scrollToNodeIfNeeded(childRef, additionalOffset);
 };
 
-/**
- * V2 Optimization: Simplified ref binding like v1
- */
 const useBindRefToChild = () => {
   const childRef = useRef<View | null>(null);
 
   const bindRefToChild = (child: React.ReactElement) => {
     return React.cloneElement(child, {
-      // @ts-expect-error @fixme can't find how to type this properly
+      // @ts-expect-error @fixme can't find how to type this properly -- new error since react 19
       ...child.props,
       ref: (node: View) => {
+        // We need the reference for our scroll handling
         childRef.current = node;
 
-        // @ts-expect-error @fixme This works at runtime
+        // @ts-expect-error @fixme This works at runtime but we couldn't find how to type it properly.
+        // Let's check if a ref was given (not by us)
         const { ref } = child;
         if (typeof ref === 'function') {
           ref(node);
@@ -111,28 +92,7 @@ const useBindRefToChild = () => {
   return { bindRefToChild, childRef };
 };
 
-/**
- * V2 Optimization: Create proxy on each render like v1, but with better performance tracking
- */
-const useProxyState = (
-  isFocused: boolean,
-  isActive: boolean,
-  isRootActive: boolean,
-  accessedPropertiesRef: React.MutableRefObject<Set<keyof FocusableNodeState>>,
-) => {
-  // Create proxy on each render like v1 to ensure it always has current values
-  return new Proxy(
-    { isFocused, isActive, isRootActive },
-    {
-      get(target, prop: keyof FocusableNodeState) {
-        accessedPropertiesRef.current.add(prop);
-        return target[prop];
-      },
-    },
-  );
-};
-
-export const SpatialNavigationNodeV2 = forwardRef<SpatialNavigationNodeRef, Props>(
+export const SpatialNavigationNode = forwardRef<SpatialNavigationNodeRef, Props>(
   (
     {
       onFocus,
@@ -155,13 +115,9 @@ export const SpatialNavigationNodeV2 = forwardRef<SpatialNavigationNodeRef, Prop
     const isRootActive = useIsRootActive();
     const [isFocused, setIsFocused] = useState(false);
     const [isActive, setIsActive] = useState(false);
-
+    // If parent changes, we have to re-register the Node + all children -> adding the parentId to the nodeId makes the children re-register.
     const id = useUniqueId({ prefix: `${parentId}_node_` });
 
-    // Track which properties are actually accessed
-    const accessedPropertiesRef = useRef<Set<keyof FocusableNodeState>>(new Set());
-
-    // Memoized imperative handle
     useImperativeHandle(
       ref,
       () => ({
@@ -171,99 +127,98 @@ export const SpatialNavigationNodeV2 = forwardRef<SpatialNavigationNodeRef, Prop
     );
 
     const { childRef, bindRefToChild } = useBindRefToChild();
+
     const scrollToNodeIfNeeded = useScrollToNodeIfNeeded({
       childRef,
       additionalOffset,
     });
 
-    // V2 Optimization: Use refs for callbacks to avoid recreating registration config
-    const callbacksRef = useRef({
-      onSelect,
-      onLongSelect,
-      onFocus,
-      onBlur,
-      onActive,
-      onInactive,
-      scrollToNodeIfNeeded,
-    });
+    /*
+     * We don't re-register in LRUD on each render, because LRUD does not allow updating the nodes.
+     * Therefore, the SpatialNavigator Node callbacks are registered at 1st render but can change (ie. if props change) afterwards.
+     * Since we want the functions to always be up to date, we use a reference to them.
+     */
+    const currentOnSelect = useRef<() => void>(undefined);
+    currentOnSelect.current = onSelect;
 
-    // Update callbacks in ref without triggering effects
-    callbacksRef.current = {
-      onSelect,
-      onLongSelect,
-      onFocus,
-      onBlur,
-      onActive,
-      onInactive,
-      scrollToNodeIfNeeded,
+    const currentOnLongSelect = useRef<() => void>(undefined);
+    currentOnLongSelect.current = onLongSelect;
+
+    const currentOnFocus = useRef<() => void>(undefined);
+    currentOnFocus.current = () => {
+      onFocus?.();
+      scrollToNodeIfNeeded();
     };
+
+    const currentOnBlur = useRef<() => void>(undefined);
+    currentOnBlur.current = onBlur;
+
+    const currentOnActive = useRef<() => void>(undefined);
+    currentOnActive.current = onActive;
+
+    const currentOnInactive = useRef<() => void>(undefined);
+    currentOnInactive.current = onInactive;
 
     const shouldHaveDefaultFocus = useSpatialNavigatorDefaultFocus();
 
-    /**
-     * V2 Optimization: Memoize the registration configuration
-     * This prevents unnecessary re-registrations
-     */
-    const registrationConfig = useMemo(
-      () => ({
+    const accessedPropertiesRef = useRef<Set<keyof FocusableNodeState>>(new Set());
+
+    useEffect(() => {
+      spatialNavigator.registerNode(id, {
         parent: parentId,
         isFocusable,
         onBlur: () => {
-          callbacksRef.current.onBlur?.();
+          currentOnBlur.current?.();
           if (accessedPropertiesRef.current.has('isFocused')) {
             setIsFocused(false);
           }
         },
         onFocus: () => {
-          callbacksRef.current.onFocus?.();
-          callbacksRef.current.scrollToNodeIfNeeded();
+          currentOnFocus.current?.();
           if (accessedPropertiesRef.current.has('isFocused')) {
             setIsFocused(true);
           }
         },
-        onSelect: () => callbacksRef.current.onSelect?.(),
-        onLongSelect: () => callbacksRef.current.onLongSelect?.(),
+        onSelect: () => currentOnSelect.current?.(),
+        onLongSelect: () => currentOnLongSelect.current?.(),
         orientation,
         isIndexAlign: alignInGrid,
         indexRange,
         onActive: () => {
-          callbacksRef.current.onActive?.();
+          currentOnActive.current?.();
           if (accessedPropertiesRef.current.has('isActive')) {
             setIsActive(true);
           }
         },
         onInactive: () => {
-          callbacksRef.current.onInactive?.();
+          currentOnInactive.current?.();
           if (accessedPropertiesRef.current.has('isActive')) {
             setIsActive(false);
           }
         },
-      }),
-      [parentId, isFocusable, orientation, alignInGrid, indexRange],
-    );
+      });
 
-    /**
-     * V2 Optimization: Single useEffect for registration
-     * Reduced from multiple effects to one
-     */
+      return () => spatialNavigator.unregisterNode(id);
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- unfortunately, we can't have clean effects with lrud for now
+    }, [parentId]);
+
     useEffect(() => {
-      spatialNavigator.registerNode(id, registrationConfig);
-
-      // Handle default focus
       if (shouldHaveDefaultFocus && isFocusable && !spatialNavigator.hasOneNodeFocused()) {
         spatialNavigator.handleOrQueueDefaultFocus(id);
       }
+    }, [id, isFocusable, shouldHaveDefaultFocus, spatialNavigator]);
 
-      return () => {
-        spatialNavigator.unregisterNode(id);
-      };
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [parentId, id, isFocusable, shouldHaveDefaultFocus]);
-
-    /**
-     * V2 Optimization: Use optimized Proxy that's created once
-     */
-    const proxyObject = useProxyState(isFocused, isActive, isRootActive, accessedPropertiesRef);
+    // This proxy allows to track whether a property is used or not
+    // hence allowing to ignore re-renders for unused pr
+    const proxyObject = new Proxy(
+      { isFocused, isActive, isRootActive },
+      {
+        get(target, prop: keyof FocusableNodeState) {
+          accessedPropertiesRef.current.add(prop);
+          return target[prop];
+        },
+      },
+    );
 
     return (
       <ParentIdContext.Provider value={id}>
@@ -272,16 +227,4 @@ export const SpatialNavigationNodeV2 = forwardRef<SpatialNavigationNodeRef, Prop
     );
   },
 );
-
-SpatialNavigationNodeV2.displayName = 'SpatialNavigationNodeV2';
-
-// Backward compatibility export
-export const SpatialNavigationNode = SpatialNavigationNodeV2;
-
-/**
- * Performance comparison helper (dev only)
- */
-if (__DEV__) {
-  // Attach performance metrics to the component
-  (SpatialNavigationNodeV2 as unknown as { __PERF_OPTIMIZED__: boolean }).__PERF_OPTIMIZED__ = true;
-}
+SpatialNavigationNode.displayName = 'SpatialNavigationNode';
