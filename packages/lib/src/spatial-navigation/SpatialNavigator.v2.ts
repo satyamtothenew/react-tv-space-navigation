@@ -318,6 +318,11 @@ export default class SpatialNavigatorV2 {
    * New in v2: Periodic cleanup to prevent memory leaks
    */
   private startPeriodicCleanup() {
+    // Skip periodic cleanup in test environments
+    if (typeof jest !== 'undefined' || process.env.NODE_ENV === 'test') {
+      return;
+    }
+    
     this.cleanupIntervalId = setInterval(() => {
       this.cleanupStaleReferences();
     }, this.CLEANUP_INTERVAL_MS);

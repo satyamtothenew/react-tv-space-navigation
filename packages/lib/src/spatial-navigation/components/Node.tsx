@@ -288,7 +288,7 @@ export const SpatialNavigationNodeV2 = forwardRef<SpatialNavigationNodeRef, Prop
         return bindRefToChild(children(proxyObject));
       }
       return children;
-    }, [children, bindRefToChild, proxyObject]);
+    }, [children, bindRefToChild, proxyObject, isFocused, isActive, isRootActive]);
 
     return <ParentIdContext.Provider value={id}>{renderedChild}</ParentIdContext.Provider>;
   },

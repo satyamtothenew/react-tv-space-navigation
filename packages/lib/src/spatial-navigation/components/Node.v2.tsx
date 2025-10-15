@@ -296,6 +296,9 @@ export const SpatialNavigationNodeV2 = forwardRef<SpatialNavigationNodeRef, Prop
 
 SpatialNavigationNodeV2.displayName = 'SpatialNavigationNodeV2';
 
+// Backward compatibility export
+export const SpatialNavigationNode = SpatialNavigationNodeV2;
+
 /**
  * Performance comparison helper (dev only)
  */

@@ -381,6 +381,9 @@ export const VirtualizedListV2 = typedMemo(
 );
 VirtualizedListV2.displayName = 'VirtualizedListV2';
 
+// Backward compatibility export
+export const VirtualizedList = VirtualizedListV2;
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
