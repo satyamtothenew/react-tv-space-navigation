@@ -54,13 +54,17 @@ const TestNode = ({
     renderCounter.increment(id);
   });
 
+  if (isFocusable) {
+    return (
+      <SpatialNavigationNode isFocusable={true}>
+        {(state: any) => <>{children || `Node ${id}`}</>}
+      </SpatialNavigationNode>
+    );
+  }
+
   return (
-    <SpatialNavigationNode isFocusable={isFocusable}>
-      {isFocusable ? (
-        (state: any) => <>{children || `Node ${id}`}</>
-      ) : (
-        <>{children || `Node ${id}`}</>
-      )}
+    <SpatialNavigationNode isFocusable={false}>
+      <>{children || `Node ${id}`}</>
     </SpatialNavigationNode>
   );
 };

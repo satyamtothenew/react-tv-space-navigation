@@ -42,7 +42,7 @@ export default class SpatialNavigatorV2 {
   private readonly MAX_REGISTRATION_ATTEMPTS = 10;
 
   // Memory optimization: WeakMap for automatic cleanup
-  private nodeMetadata = new WeakMap<string, { lastFocused: number }>();
+  private nodeMetadata = new WeakMap<object, { lastFocused: number }>();
 
   // Optimized parent-child mapping
   private parentChildMap = new Map<string, Set<string>>();
@@ -178,6 +178,12 @@ export default class SpatialNavigatorV2 {
    */
   public unregisterNode(...params: Parameters<Lrud['unregisterNode']>) {
     const id = params[0];
+    
+    // Ensure id is a string
+    if (typeof id !== 'string') {
+      console.warn('[SpatialNavigator v2] Cannot unregister non-string node ID');
+      return;
+    }
     
     // Clean up parent-child mapping
     const children = this.parentChildMap.get(id);
@@ -321,13 +327,16 @@ export default class SpatialNavigatorV2 {
   private cleanupStaleReferences() {
     try {
       // Get all currently registered nodes
-      const allNodes = this.lrud.getRootNode()?.children || [];
+      const rootNode = this.lrud.getRootNode();
+      const allNodes = rootNode?.children || [];
       const allNodeIds = new Set<string>();
       
       // Recursively collect all node IDs
       const collectNodeIds = (nodes: any[]) => {
         nodes.forEach(node => {
-          allNodeIds.add(node.id);
+          if (typeof node.id === 'string') {
+            allNodeIds.add(node.id);
+          }
           if (node.children) {
             collectNodeIds(node.children);
           }
@@ -382,7 +391,7 @@ export default class SpatialNavigatorV2 {
     // Clear timers
     if (this.batchTimeoutId) {
       if (typeof cancelIdleCallback !== 'undefined') {
-        cancelIdleCallback(this.batchTimeoutId as number);
+        cancelIdleCallback(this.batchTimeoutId as unknown as number);
       } else {
         clearTimeout(this.batchTimeoutId);
       }

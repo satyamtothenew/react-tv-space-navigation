@@ -163,7 +163,7 @@ export const useNavigationSelector = <T,>(
 
   // Store the selector and its last result
   const selectorRef = useRef(selector);
-  const lastResultRef = useRef<T>();
+  const lastResultRef = useRef<T | undefined>(undefined);
 
   // Update selector ref
   selectorRef.current = selector;
